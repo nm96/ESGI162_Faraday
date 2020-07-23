@@ -6,7 +6,6 @@
 
 freq = 50;  %frequency Hertz
 
-s = 0.05; %Slip 
 
 R_s = 2.3; %stator resistance (Ohms)
 
@@ -89,17 +88,28 @@ dV_s = @(t) - 2 * sqrt(2) * pi * sin(2*pi*t); %The nondimensional derivative of 
 
 
 % define slip and its derivative
-omega = 2*pi;
+%Frequency of s 
+omega = 2*pi * 0.9;
 
-s= @(t)  0.05 + 0.005 * cos(omega * t);
+%constant slip
 %s = @(t) 0.05;
-
-ds = @(t)  - 0.005 * omega * sin(omega * t);
 %ds = @(t) 0;
+
+% %sinesoidalslip
+ epsilon = 0.005;
+% s= @(t)  0.05 + epsilon * cos(omega * t);
+% ds = @(t)  - epsilon * omega * sin(omega * t);
+
+%%Smoothed square wave
+delta = 0.5;
+s = @(t) 0.05 + epsilon * 2/ pi * atan(sin(omega * t)/delta);
+ds = @(t) epsilon * (omega * delta * cos(omega * t))./((sin(omega*t)).^2 + delta^2);
 
 %% Rewrite as a first order system
 
 RHS_2_1 =  @(t) - ( a_0_2 * ds(t)/s(t)  + a_0_0/s(t));
+
+%RHS_2_1 = @(t) 0; %UNCOMMENT to turn of stiffness term
 
 RHS_2_2 = @(t)  - ( a_1_2  * ds(t)/s(t)  + a_1_1  + a_1_0 /s(t));
 
@@ -107,10 +117,10 @@ RHS = @(t, u) [0, 1; RHS_2_1(t), RHS_2_2(t)]* u ...
     + [0; c_1_1 * dV_s(t) + (c_0_2 * ds(t)/s(t) + c_0_0 /s(t)) *V_s(t)];
 
 %Define options for ODE solver
-options = odeset('RelTol',1e-6,'AbsTol',1e-6);
+options = odeset('RelTol',1e-4,'AbsTol',1e-4);
 
 %Define end time
-t_end = 2000;
+t_end = 100;
 tspan = [0, t_end]; %Interval to solve over
 
 %inital condition
@@ -130,6 +140,7 @@ t_dim = t0 * t;
 I_s_dim = I0 * u(:,1);
 
 %% Plot current vs. time
+figure
 ax1 = axes;
 plot(ax1,t_dim,I_s_dim,'b-','LineWidth',1.0)
 ax1.FontSize = 14;
@@ -165,6 +176,6 @@ freq_max = 100;
 %plot
 figure
 ax2 =axes;
-plot(f,spec,'b-o','LineWidth',0.8)
+semilogy(f,spec,'b-o','LineWidth',0.8)
 xlim([freq_min, freq_max])
 xlabel('frequency, $\mathrm{Hz}$','Interpreter','latex')

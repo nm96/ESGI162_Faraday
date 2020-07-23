@@ -1,4 +1,6 @@
-# ESGI162_Faraday
+## ESGI162_Faraday
+
+# Bernard group python code:
 
 The simulation can be executed via the command line, eg.
 
